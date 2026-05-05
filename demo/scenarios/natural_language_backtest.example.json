@@ -1,0 +1,13 @@
+{
+  "id": "natural-language-backtest-example",
+  "title": "Natural-language backtest demo",
+  "flow": "backtest",
+  "language": "en",
+  "prompt": "Backtest a simple moving-average crossover strategy for BTC-USDT from 2024-01-01 to 2024-06-30 using daily candles, then summarize return, drawdown, and trade count.",
+  "expected_highlights": [
+    "The agent converts a natural-language request into a backtest task.",
+    "The result explains assumptions, metrics, and limitations.",
+    "No secrets, account identifiers, or real user data are required."
+  ],
+  "notes": "Use public market data only. This scenario is a tiny scaffold example, not a performance claim."
+}

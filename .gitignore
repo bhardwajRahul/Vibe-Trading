@@ -21,6 +21,10 @@ agent/tests/*_result.json
 .ruff_cache/
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
+.vibe-dev/
+.vibe-record/
+.cache/
+.remotion/
 
 # DuckDB data cache
 data/*.duckdb
@@ -44,6 +48,23 @@ build/
 
 # Local demo videos (too large for git; link to external host instead)
 assets/*.mp4
+demo/recordings/*
+!demo/recordings/.gitkeep
+demo/exports/*
+!demo/exports/.gitkeep
+demo/screenshots/*
+!demo/screenshots/.gitkeep
+demo/state/*
+!demo/state/.gitkeep
+demo/public/render-input/*
+!demo/public/render-input/.gitkeep
+demo/.cache/
+demo/node_modules/
+demo/.remotion/
+demo/**/*.mp4
+demo/**/*.mov
+demo/**/*.webm
+demo/**/*.gif
 
 # Manual E2E smoke tests — require live API keys (OpenRouter / yfinance),
 # would break CI if committed. Kept local; run explicitly when validating

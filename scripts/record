@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEMO_DIR="$ROOT/demo"
+BACKEND_PORT="${VIBE_BACKEND_PORT:-8899}"
+FRONTEND_PORT="${VIBE_FRONTEND_PORT:-5899}"
+
+usage() {
+  cat <<USAGE
+Usage: scripts/record <command>
+
+Commands:
+  up             Start local record-mode dev servers
+  stop           Stop record-mode dev servers
+  restart        Restart record-mode dev servers
+  open           Open the record-mode frontend
+  status         Show record-mode process status
+  urls           Print record-mode URLs
+  reset          Clear generated demo outputs and local record state
+  tree           Show demo/promo asset folders
+  install        Install demo capture/render dependencies
+  quality        Run demo quality gate against local dev servers
+  capture        Capture a browser scenario with Playwright
+  cli            Capture a CLI scenario as raw terminal output
+  render FORMAT  Render promo video: landscape, portrait, or square
+  preview        Open Remotion Studio for promo compositions
+
+Record mode uses the real app and real UI. The demo folder stores fixtures,
+scenarios, storyboards, raw captures, screenshots, and final exports.
+USAGE
+}
+
+run_dev() {
+  record_env "$ROOT/scripts/dev" "$@"
+}
+
+record_env() {
+  VIBE_DEMO_MODE=1 \
+  VIBE_RECORD_MODE=1 \
+  VIBE_DEV_STATE_DIR="$ROOT/.vibe-record" \
+  VIBE_BACKEND_URL="${VIBE_BACKEND_URL:-http://127.0.0.1:$BACKEND_PORT}" \
+  VIBE_FRONTEND_URL="${VIBE_FRONTEND_URL:-http://127.0.0.1:$FRONTEND_PORT}" \
+  "$@"
+}
+
+cmd_reset() {
+  mkdir -p "$DEMO_DIR/recordings" "$DEMO_DIR/exports" "$DEMO_DIR/screenshots" "$DEMO_DIR/state"
+  mkdir -p "$DEMO_DIR/public/render-input"
+  find "$DEMO_DIR/recordings" -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
+  find "$DEMO_DIR/exports" -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
+  find "$DEMO_DIR/screenshots" -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
+  find "$DEMO_DIR/state" -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
+  find "$DEMO_DIR/public/render-input" -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
+  rm -rf "$ROOT/.vibe-record"
+  printf "record-mode outputs reset under %s\n" "$DEMO_DIR"
+}
+
+cmd_tree() {
+  find "$DEMO_DIR" -maxdepth 2 -print | sort
+}
+
+npm_demo() {
+  npm --prefix "$DEMO_DIR" "$@"
+}
+
+cmd_install() {
+  npm_demo install
+  npm_demo exec playwright install chromium
+}
+
+cmd_quality() {
+  record_env npm_demo run quality -- "$@"
+}
+
+cmd_capture() {
+  record_env npm_demo run capture -- "$@"
+}
+
+cmd_cli() {
+  record_env npm_demo run cli:capture -- "$@"
+}
+
+cmd_render() {
+  local format="${1:-landscape}"
+  shift || true
+  case "$format" in
+    landscape|portrait|square)
+      record_env npm_demo run "render:$format" -- "$@"
+      ;;
+    *)
+      printf "unknown render format: %s\n" "$format" >&2
+      exit 2
+      ;;
+  esac
+}
+
+cmd_preview() {
+  record_env npm_demo run remotion:preview
+}
+
+case "${1:-}" in
+  up) run_dev up ;;
+  stop) run_dev stop ;;
+  restart) run_dev restart ;;
+  open) run_dev open ;;
+  status) run_dev status ;;
+  urls) run_dev urls ;;
+  reset) cmd_reset ;;
+  tree) cmd_tree ;;
+  install) cmd_install ;;
+  quality) shift; cmd_quality "$@" ;;
+  capture) shift; cmd_capture "$@" ;;
+  cli) shift; cmd_cli "$@" ;;
+  render) shift; cmd_render "${1:-landscape}" ;;
+  preview) cmd_preview ;;
+  -h|--help|help|"") usage ;;
+  *)
+    printf "unknown command: %s\n\n" "$1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
